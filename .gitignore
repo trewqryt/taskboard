@@ -43,3 +43,9 @@ Thumbs.db
 .env
 app.pid
 uvicorn.log
+
+.venv/
+__pycache__/
+*.pyc
+*.log
+.env
