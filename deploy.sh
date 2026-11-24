@@ -179,7 +179,7 @@ else
 fi
 
 # Check database connection
-$SUDO -u postgres psql -tAc "SELECT 1" \
+$SUDO runuser -u postgres -- psql -tAc "SELECT 1" \
     >/dev/null ||
     die "Cannot connect to PostgreSQL"
 
@@ -190,7 +190,7 @@ $SUDO -u postgres psql -tAc "SELECT 1" \
 log "Configuring PostgreSQL user..."
 
 USER_EXISTS=$(
-    $SUDO -u postgres psql -tAc \
+    $SUDO runuser -u postgres -- psql -tAc \
     "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'"
 )
 
@@ -198,7 +198,7 @@ if [ "$USER_EXISTS" != "1" ]; then
 
     log "Creating database user..."
 
-    $SUDO -u postgres psql \
+    $SUDO runuser -u postgres -- psql \
         -v ON_ERROR_STOP=1 \
         -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';" ||
         die "Cannot create database user"
@@ -207,7 +207,7 @@ else
 fi
 
 # Ensure the password matches the application
-$SUDO -u postgres psql \
+$SUDO runuser -u postgres -- psql \
     -v ON_ERROR_STOP=1 \
     -c "ALTER USER $DB_USER WITH PASSWORD '$DB_PASSWORD';" ||
     die "Cannot configure database password"
@@ -219,7 +219,7 @@ $SUDO -u postgres psql \
 log "Configuring database..."
 
 DB_EXISTS=$(
-    $SUDO -u postgres psql -tAc \
+    $SUDO runuser -u postgres -- psql -tAc \
     "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'"
 )
 
@@ -227,7 +227,7 @@ if [ "$DB_EXISTS" != "1" ]; then
 
     log "Creating database..."
 
-    $SUDO -u postgres createdb \
+    $SUDO runuser -u postgres -- createdb \
         -O "$DB_USER" "$DB_NAME" ||
         die "Database creation failed"
 else
@@ -235,13 +235,13 @@ else
 fi
 
 # Ensure the application user owns the database
-$SUDO -u postgres psql \
+$SUDO runuser -u postgres -- psql \
     -v ON_ERROR_STOP=1 \
     -c "ALTER DATABASE $DB_NAME OWNER TO $DB_USER;" ||
     die "Cannot configure database owner"
 
 # Grant permissions
-$SUDO -u postgres psql \
+$SUDO runuser -u postgres -- psql \
     -v ON_ERROR_STOP=1 \
     -d "$DB_NAME" \
     -c "GRANT ALL ON SCHEMA public TO $DB_USER;" ||
